@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16181d">
+<meta name="description" content="Cerchi in acciaio Magnetto Wheels per vettura, misura e codice. A cura di Stefano Serafin - MAK S.p.A.">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cerchi acciaio">
+<link rel="apple-touch-icon" href="assets/mak.png">
+<title>Cerchi in acciaio Magnetto - MAK</title>
+<style>
+  :root{
+    --bg:#f4f3ef; --panel:#ffffff; --panel-2:#f0eee8;
+    --ink:#1a1c20; --ink-soft:#5b5e64; --hair:#d9d7cc;
+    --accent:#d8322c; --accent-ink:#ffffff;
+    --ok:#1c7c3c; --ok-bg:#e4f2e6;
+    --amber:#c98a00; --amber-bg:#fbf1d9;
+    --focus:#1f6feb;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#16181d; --panel:#1e2128; --panel-2:#23262e;
+      --ink:#ecece7; --ink-soft:#9a9da4; --hair:#31343d;
+      --accent:#e5433d; --accent-ink:#ffffff;
+      --ok:#5fd07f; --ok-bg:#16281b;
+      --amber:#f5b301; --amber-bg:#2b2410;
+      --focus:#4c8dff;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#16181d; --panel:#1e2128; --panel-2:#23262e;
+    --ink:#ecece7; --ink-soft:#9a9da4; --hair:#31343d;
+    --accent:#e5433d; --accent-ink:#ffffff;
+    --ok:#5fd07f; --ok-bg:#16281b;
+    --amber:#f5b301; --amber-bg:#2b2410;
+    --focus:#4c8dff;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:16px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:env(safe-area-inset-bottom);
+    overflow-x:hidden;
+  }
+  [hidden]{display:none !important}
+
+  /* ---------- brand bar ---------- */
+  .brandbar{
+    background:#ffffff;border-bottom:1px solid #e4e2d8;
+    padding:calc(env(safe-area-inset-top) + 8px) 16px 8px;
+  }
+  .brandbar-in{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px}
+  .brandbar img{display:block;width:auto;height:15px}
+  .brandbar .sep{width:1px;height:18px;background:#cbc9bd;flex:none}
+  .brandbar .xil{font-weight:800;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#3a3a34}
+  .brandbar .tag{
+    margin-left:auto;font-family:var(--mono);font-size:9.5px;
+    letter-spacing:.14em;text-transform:uppercase;color:#9b9b92;
+  }
+  @media (max-width:390px){ .brandbar .tag{display:none} }
+
+  main{max-width:1100px;margin:0 auto;padding:14px 16px 56px}
+
+  h2.sec{
+    font-size:12px;font-family:var(--mono);letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink-soft);margin:0 2px 10px;
+  }
+
+  /* ---------- gate ---------- */
+  #gate{
+    background:var(--panel);border:1px solid var(--hair);border-radius:14px;
+    padding:20px 16px;max-width:360px;margin:6vh auto 0;
+  }
+  #gate p.lead{font-size:14px;color:var(--ink-soft);margin-bottom:14px}
+  #gate .row{display:flex;gap:8px}
+  #gate input[type="password"]{
+    flex:1;min-width:0;font-family:var(--sans);font-size:17px;letter-spacing:.3em;
+    color:var(--ink);background:var(--panel-2);
+    border:1px solid var(--hair);border-radius:9px;padding:11px 12px;
+  }
+  .btn{
+    font-family:var(--sans);font-size:15px;font-weight:700;letter-spacing:.02em;
+    color:var(--accent-ink);background:var(--accent);
+    border:0;border-radius:10px;padding:11px 16px;cursor:pointer;
+  }
+  .btn:active{filter:brightness(.94)}
+  .btn.ghost{background:var(--panel-2);color:var(--ink);border:1px solid var(--hair)}
+  .btn.small{font-size:12.5px;font-weight:600;padding:8px 12px}
+  #gate label.remember{
+    display:flex;align-items:center;gap:8px;margin-top:12px;
+    font-size:13px;color:var(--ink-soft);
+  }
+  #gate-msg{margin-top:12px;font-size:13.5px;min-height:1.2em}
+  #gate-msg.err{color:var(--accent)}
+  #gate-msg.wait{color:var(--ink-soft)}
+
+  /* ---------- filtri ---------- */
+  .pricenote{
+    display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;
+    background:var(--panel-2);border:1px solid var(--hair);border-radius:10px;
+    padding:9px 12px;font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;
+  }
+  .pricenote .sconto{display:flex;align-items:center;gap:6px;margin-left:auto;white-space:nowrap}
+  .pricenote input{
+    width:64px;font-family:var(--sans);font-size:16px;text-align:right;
+    color:var(--ink);background:var(--panel);
+    border:1px solid var(--hair);border-radius:8px;padding:5px 8px;
+  }
+
+  .selrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:8px}
+  @media (min-width:700px){ .selrow{grid-template-columns:repeat(4,minmax(0,1fr))} }
+  .selrow .wide{grid-column:1 / -1}
+  label.lbl{
+    display:block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px;
+  }
+  select,input[type="search"]{
+    width:100%;font-family:var(--sans);font-size:16px;
+    color:var(--ink);background:var(--panel-2);
+    border:1px solid var(--hair);border-radius:9px;
+    padding:10px 8px;appearance:none;-webkit-appearance:none;
+  }
+  select.on{border-color:var(--accent);background:var(--panel);font-weight:600}
+  select:disabled{opacity:.5}
+  select:focus,input:focus,button:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+
+  .checks{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+  .checks label{
+    display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+    font-size:13.5px;border:1px solid var(--hair);border-radius:9px;
+    padding:8px 12px;background:var(--panel);
+  }
+  .checks input{accent-color:var(--accent)}
+  .checks label:has(input:checked){border-color:var(--accent);background:var(--ok-bg)}
+  .checks .btn{margin-left:auto}
+
+  /* ---------- barra risultati ---------- */
+  .resbar{
+    position:sticky;top:0;z-index:20;background:var(--bg);
+    border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
+    margin:0 -16px 12px;padding:8px 16px;
+    display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;
+  }
+  .resbar .count{font-size:13px;font-weight:700;margin-right:auto}
+  .resbar .count span{font-weight:400;color:var(--ink-soft)}
+  .seg{display:inline-flex;border:1px solid var(--hair);border-radius:9px;overflow:hidden}
+  .seg label{font-size:13px;padding:7px 12px;cursor:pointer;background:var(--panel)}
+  .seg input{position:absolute;opacity:0;pointer-events:none}
+  .seg label:has(input:checked){background:var(--accent);color:var(--accent-ink);font-weight:700}
+  .seg label:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:-2px}
+  .resbar select{width:auto;font-size:14px;padding:7px 8px}
+
+  /* ---------- schede ---------- */
+  #lista{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+  @media (min-width:760px){ #lista{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  .card2{
+    background:var(--panel);border:1px solid var(--hair);border-radius:12px;
+    padding:11px 13px;font-size:13.5px;display:flex;flex-direction:column;
+  }
+  .card2 .h{font-weight:800;font-size:15.5px;line-height:1.25}
+  .card2 .yrs{font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
+  .card2 .ver{
+    font-size:12px;color:var(--ink-soft);margin-top:2px;overflow-wrap:anywhere;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .spec{
+    font-family:var(--mono);font-weight:700;font-size:14.5px;
+    margin-top:8px;padding-top:8px;border-top:1px solid var(--hair);
+  }
+  .spec small{font-weight:400;font-size:11.5px;color:var(--ink-soft)}
+  .tyres{margin-top:5px;font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+  .nota{
+    background:var(--amber-bg);border-left:3px solid var(--amber);
+    border-radius:0 7px 7px 0;padding:5px 9px;margin-top:8px;font-size:12.5px;
+  }
+  .foot{
+    display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 12px;
+    margin-top:auto;padding-top:10px;
+  }
+  .foot .cod{font-family:var(--mono);font-weight:700;font-size:13.5px}
+  .foot .sub{display:block;font-size:11.5px;color:var(--ink-soft)}
+  .foot .prz{margin-left:auto;text-align:right;line-height:1.3}
+  .foot .lst{font-weight:700;font-size:15px;white-space:nowrap}
+  .foot .lst.old{font-weight:400;font-size:12px;color:var(--ink-soft)}
+  .foot .net{display:block;color:var(--ok);font-weight:800;font-size:15px;white-space:nowrap}
+  .badge{
+    display:inline-block;font-family:var(--sans);font-size:10.5px;font-weight:700;
+    border-radius:5px;padding:1px 6px;margin-left:4px;vertical-align:1px;
+    background:var(--ok-bg);color:var(--ok);
+  }
+  .acts{display:flex;gap:6px;margin-top:9px}
+  .rowbtn{
+    font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--ink);
+    background:var(--panel-2);border:1px solid var(--hair);border-radius:8px;
+    padding:7px 11px;cursor:pointer;
+  }
+  .rowbtn:active{filter:brightness(.95)}
+  .empty{font-size:14px;color:var(--ink-soft);padding:14px 2px;grid-column:1 / -1}
+  #altri{display:block;margin:14px auto 0}
+
+  /* ---------- modal ---------- */
+  .modal{
+    position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);
+    display:flex;align-items:flex-end;justify-content:center;
+  }
+  @media (min-width:560px){ .modal{align-items:center;padding:20px} }
+  .modal-in{
+    background:var(--panel);border:1px solid var(--hair);
+    border-radius:14px 14px 0 0;width:100%;max-width:560px;
+    padding:16px 16px calc(16px + env(safe-area-inset-bottom));
+    max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  }
+  @media (min-width:560px){ .modal-in{border-radius:14px;padding-bottom:16px} }
+  .modal-in h3{font-size:17px;font-weight:800;line-height:1.25;margin-bottom:10px}
+  .modal-in h4{
+    font-size:11px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-soft);margin:16px 0 6px;
+  }
+  dl.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13.5px}
+  dl.kv dt{color:var(--ink-soft)}
+  dl.kv dd{font-weight:600;overflow-wrap:anywhere}
+  .appl{padding:7px 0;border-bottom:1px solid var(--hair);font-size:13px}
+  .appl:last-child{border-bottom:0}
+  .appl b{font-weight:700}
+  .appl span{color:var(--ink-soft);font-size:12px}
+  #riepilogo-text{
+    width:100%;min-height:190px;font-family:var(--mono);font-size:12.5px;line-height:1.5;
+    color:var(--ink);background:var(--panel-2);border:1px solid var(--hair);border-radius:9px;
+    padding:10px;resize:vertical;
+  }
+  .modal-actions{display:flex;gap:8px;margin-top:12px;align-items:center}
+  #copia-msg{font-size:12.5px;color:var(--ok)}
+
+  footer{
+    max-width:1100px;margin:0 auto;padding:26px 18px 42px;
+    font-size:12px;line-height:1.55;color:var(--ink-soft);border-top:1px solid var(--hair);
+  }
+</style>
+</head>
+<body>
+<div class="brandbar">
+  <div class="brandbar-in">
+    <img src="assets/mak.png" alt="MAK">
+    <span class="sep" aria-hidden="true"></span>
+    <span class="xil">Magnetto</span>
+    <span class="tag">Cerchi in acciaio</span>
+  </div>
+</div>
+
+<main>
+  <section id="gate">
+    <p class="lead">Inserisci il PIN per consultare il catalogo dei cerchi in acciaio Magnetto.</p>
+    <div class="row">
+      <input type="password" id="pin" inputmode="numeric" autocomplete="off" aria-label="PIN">
+      <button class="btn" type="button" id="unlock">Sblocca</button>
+    </div>
+    <label class="remember"><input type="checkbox" id="remember"> Ricorda su questo dispositivo</label>
+    <p id="gate-msg" role="alert"></p>
+  </section>
+
+  <div id="app" hidden>
+    <div class="pricenote">
+      <span>Prezzi lordi di <b>listino</b> per cerchio, IVA esclusa, in vigore dal <span id="pn-data"></span>.</span>
+      <label class="sconto">Sconto cliente %
+        <input type="number" id="sconto" inputmode="decimal" min="0" max="99" step="0.5" placeholder="0">
+      </label>
+    </div>
+
+    <div class="selrow">
+      <div class="wide">
+        <label class="lbl" for="q">Cerca</label>
+        <input type="search" id="q" placeholder="Modello, codice R1, EAN, misura pneumatico…" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+      <div><label class="lbl" for="f-marca">Marca</label><select id="f-marca"></select></div>
+      <div><label class="lbl" for="f-modello">Modello</label><select id="f-modello"></select></div>
+      <div><label class="lbl" for="f-diam">Diametro</label><select id="f-diam"></select></div>
+      <div><label class="lbl" for="f-canale">Canale</label><select id="f-canale"></select></div>
+      <div><label class="lbl" for="f-attacco">Fori x interasse</label><select id="f-attacco"></select></div>
+      <div><label class="lbl" for="f-et">ET</label><select id="f-et"></select></div>
+      <div><label class="lbl" for="f-cb">Foro centrale</label><select id="f-cb"></select></div>
+      <div><label class="lbl" for="f-pneu">Pneumatico</label><select id="f-pneu"></select></div>
+      <div><label class="lbl" for="f-fin">Finitura</label><select id="f-fin"></select></div>
+    </div>
+
+    <div class="checks">
+      <label><input type="checkbox" id="c-prod"> Vetture ancora in produzione</label>
+      <label><input type="checkbox" id="c-new"> Novità</label>
+      <button class="btn ghost small" type="button" id="reset">Azzera filtri</button>
+    </div>
+
+    <div class="resbar">
+      <div class="count" id="count"></div>
+      <div class="seg" role="radiogroup" aria-label="Cosa elencare">
+        <label><input type="radio" name="vista" value="vetture" checked> Vetture</label>
+        <label><input type="radio" name="vista" value="cerchi"> Cerchi</label>
+      </div>
+      <select id="ordine" aria-label="Ordina per">
+        <option value="nome">Ordina: marca e modello</option>
+        <option value="prezzo">Ordina: prezzo crescente</option>
+        <option value="prezzo-d">Ordina: prezzo decrescente</option>
+        <option value="diam">Ordina: diametro</option>
+      </select>
+    </div>
+
+    <div id="lista"></div>
+    <button class="btn ghost" type="button" id="altri" hidden>Mostra altri</button>
+  </div>
+</main>
+
+<div id="riepilogo-modal" class="modal" hidden>
+  <div class="modal-in">
+    <h3>Riepilogo da inviare</h3>
+    <textarea id="riepilogo-text" readonly></textarea>
+    <div class="modal-actions">
+      <button class="btn" type="button" id="copia">Copia</button>
+      <button class="btn ghost" type="button" id="chiudi-riepilogo">Chiudi</button>
+      <span id="copia-msg"></span>
+    </div>
+  </div>
+</div>
+
+<div id="info-modal" class="modal" hidden>
+  <div class="modal-in">
+    <h3 id="info-title"></h3>
+    <div id="info-body"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="info-close">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Dati dal catalogo applicazioni Magnetto Wheels, edizione <span id="foot-data">&mdash;</span>.
+  Prezzi lordi di listino, IVA esclusa; lo sconto è indicativo e va confermato in fase d'ordine.
+  Le note che il catalogo riporta solo in tedesco sono tradotte a cura di chi ha preparato questa
+  pagina: nei dettagli c'è sempre il testo originale. Prima del montaggio verifica l'abbinamento
+  sulla carta di circolazione. A cura di Stefano Serafin &mdash; MAK S.p.A.
+</footer>
+
+<script>
+var DATA_BLOB = /*DATA_BLOB*/;
+var BUILD_META = /*BUILD_META*/;
+var GENERATO = /*GENERATO*/;
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+  "use strict";
+
+  var LS_PIN = "magnetto_pin", LS_SCONTO = "magnetto_sconto";
+  var PASSO = 60;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var gate = $("gate"), app = $("app"), gateMsg = $("gate-msg");
+  var META = {}, ROWS = [], SCONTO = 0, HITS = [], shown = PASSO;
+
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];
+    });
+  }
+  function b64ToBytes(b64){
+    var bin = atob(b64), out = new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function eur(n){
+    return n.toLocaleString("it-IT", {minimumFractionDigits:2, maximumFractionDigits:2}) + " €";
+  }
+  function dec(n){ return n == null ? "" : String(n).replace(".", ","); }
+  function netto(p){ return p * (1 - SCONTO/100); }
+
+  /* ---------------- decifratura ---------------- */
+  function decrypt(pin){
+    if(!(window.crypto && window.crypto.subtle)){
+      return Promise.reject(new Error("nocrypto"));
+    }
+    var parts = DATA_BLOB.split(".");
+    var salt = b64ToBytes(parts[0]), iv = b64ToBytes(parts[1]), ct = b64ToBytes(parts[2]);
+    var enc = new TextEncoder().encode(pin);
+    return crypto.subtle.importKey("raw", enc, "PBKDF2", false, ["deriveKey"])
+      .then(function(km){
+        return crypto.subtle.deriveKey(
+          {name:"PBKDF2", salt:salt, iterations:BUILD_META.iter, hash:"SHA-256"},
+          km, {name:"AES-GCM", length:256}, false, ["decrypt"]);
+      })
+      .then(function(key){
+        return crypto.subtle.decrypt({name:"AES-GCM", iv:iv}, key, ct);
+      })
+      .then(function(buf){
+        return JSON.parse(new TextDecoder().decode(buf));
+      });
+  }
+
+  function enter(data){
+    META = data.meta || {};
+    ROWS = data.righe.map(function(r, i){
+      r.i = i;
+      r.bl = r.b + (r.cm ? " (commerciali)" : "");
+      r.att = r.h + "x" + dec(r.pcd);
+      r.etl = r.et != null ? dec(r.et) : (r.ets || "");
+      // testo su cui lavora la ricerca libera; le misure pneumatico anche senza "/" e "R"
+      r.hay = [r.bl, r.m, r.v, r.c, r.mwd, r.ean, r.alc, r.pj, r.abe, r.n, r.ty.join(" "),
+               r.ty.join(" ").replace(/[^0-9 ]/g, "")].join(" ").toLowerCase();
+      return r;
+    });
+    gate.hidden = true;
+    app.hidden = false;
+    $("foot-data").textContent = META.edizione || GENERATO || "—";
+    $("pn-data").textContent = META.prezzi || "—";
+    initApp();
+  }
+
+  function tryUnlock(pin, fromStorage){
+    gateMsg.className = "wait";
+    gateMsg.textContent = "Sblocco…";
+    decrypt(pin).then(function(data){
+      if($("remember").checked || fromStorage){
+        try { localStorage.setItem(LS_PIN, pin); } catch(e){}
+      }
+      enter(data);
+    }).catch(function(err){
+      if(err && err.message === "nocrypto"){
+        gateMsg.className = "err";
+        gateMsg.textContent = "Apri la pagina da https:// (GitHub Pages): la decifratura richiede una connessione sicura.";
+        return;
+      }
+      if(fromStorage){ try { localStorage.removeItem(LS_PIN); } catch(e){} }
+      gateMsg.className = "err";
+      gateMsg.textContent = "PIN errato.";
+    });
+  }
+
+  $("unlock").addEventListener("click", function(){
+    var pin = $("pin").value.trim();
+    if(pin) tryUnlock(pin, false);
+  });
+  $("pin").addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ e.preventDefault(); $("unlock").click(); }
+  });
+
+  var saved = null;
+  try { saved = localStorage.getItem(LS_PIN); } catch(e){}
+  if(saved){ tryUnlock(saved, true); }
+
+  /* ---------------- filtri ---------------- */
+  function byNum(a, b){ return parseFloat(a.replace(",", ".")) - parseFloat(b.replace(",", ".")); }
+  function byText(a, b){ return a.localeCompare(b, "it"); }
+
+  // val: valore (o lista di valori) della riga per quel filtro
+  var FILTRI = [
+    {id:"f-marca",   tutti:"Tutte",  val:function(r){ return r.bl; },  ord:byText},
+    {id:"f-modello", tutti:"Tutti",  val:function(r){ return r.m; },   ord:byText},
+    {id:"f-diam",    tutti:"Tutti",  val:function(r){ return String(r.d); }, ord:byNum,
+     txt:function(v){ return v + '"'; }},
+    {id:"f-canale",  tutti:"Tutti",  val:function(r){ return r.w; },   ord:function(a, b){
+       return byNum(a.replace(" 1/2", ".5"), b.replace(" 1/2", ".5")) || byText(a, b); }},
+    {id:"f-attacco", tutti:"Tutti",  val:function(r){ return r.att; }, ord:function(a, b){
+       var x = a.split("x"), y = b.split("x");
+       return (x[0] - y[0]) || byNum(x[1], y[1]); }},
+    {id:"f-et",      tutti:"Tutti",  val:function(r){ return r.etl; }, ord:function(a, b){
+       return (byNum(a, b) || 0) || byText(a, b); }},
+    {id:"f-cb",      tutti:"Tutti",  val:function(r){ return dec(r.cb); }, ord:byNum},
+    {id:"f-pneu",    tutti:"Tutti",  val:function(r){ return r.ty; },  ord:function(a, b){
+       return byText(a.slice(-3) + a, b.slice(-3) + b); }},
+    {id:"f-fin",     tutti:"Tutte",  val:function(r){ return r.fin || "Non indicata"; }, ord:byText}
+  ];
+
+  function stato(){
+    var st = {q: $("q").value.trim().toLowerCase().split(/\s+/).filter(Boolean),
+              prod: $("c-prod").checked, nw: $("c-new").checked, sel: {}};
+    FILTRI.forEach(function(f){ st.sel[f.id] = $(f.id).value; });
+    return st;
+  }
+
+  function passa(r, st, tranne){
+    if(st.prod && r.t) return false;
+    if(st.nw && !r.nw) return false;
+    for(var k=0;k<st.q.length;k++){ if(r.hay.indexOf(st.q[k]) < 0) return false; }
+    for(var j=0;j<FILTRI.length;j++){
+      var f = FILTRI[j], want = st.sel[f.id];
+      if(!want || f.id === tranne) continue;
+      var v = f.val(r);
+      if(Array.isArray(v) ? v.indexOf(want) < 0 : v !== want) return false;
+    }
+    return true;
+  }
+
+  // ogni tendina elenca solo i valori ancora possibili con gli altri filtri, col conteggio
+  function aggiornaTendine(st){
+    FILTRI.forEach(function(f){
+      var sel = $(f.id), cur = st.sel[f.id], n = {};
+      if(f.id === "f-modello" && !st.sel["f-marca"]){
+        sel.innerHTML = '<option value="">Scegli prima la marca</option>';
+        sel.disabled = true; sel.className = "";
+        return;
+      }
+      ROWS.forEach(function(r){
+        if(!passa(r, st, f.id)) return;
+        [].concat(f.val(r)).forEach(function(v){ if(v) n[v] = (n[v] || 0) + 1; });
+      });
+      var vals = Object.keys(n);
+      if(cur && !n[cur]) vals.push(cur);
+      vals.sort(f.ord);
+      sel.innerHTML = '<option value="">' + f.tutti + '</option>' + vals.map(function(v){
+        return '<option value="' + esc(v) + '"' + (v === cur ? " selected" : "") + '>' +
+               esc(f.txt ? f.txt(v) : v) + " (" + (n[v] || 0) + ")</option>";
+      }).join("");
+      sel.disabled = false;
+      sel.className = cur ? "on" : "";
+    });
+  }
+
+  /* ---------------- risultati ---------------- */
+  function vista(){ return document.querySelector('input[name="vista"]:checked').value; }
+
+  function ordina(list){
+    var o = $("ordine").value;
+    var nome = function(a, b){
+      return byText(a.bl, b.bl) || byText(a.m, b.m) || (a.d - b.d) || (a.i - b.i);
+    };
+    var misura = function(a, b){ return (a.d - b.d) || ((a.wn || 0) - (b.wn || 0)) || byText(a.c, b.c); };
+    list.sort(function(a, b){
+      if(o === "prezzo") return (a.p - b.p) || nome(a, b);
+      if(o === "prezzo-d") return (b.p - a.p) || nome(a, b);
+      if(o === "diam") return misura(a, b) || nome(a, b);
+      return vista() === "cerchi" ? misura(a, b) : nome(a, b);
+    });
+    return list;
+  }
+
+  function aggiorna(){
+    var st = stato();
+    if(!st.sel["f-marca"] && $("f-modello").value){ $("f-modello").value = ""; st.sel["f-modello"] = ""; }
+    aggiornaTendine(st);
+    var righe = ROWS.filter(function(r){ return passa(r, st); });
+    var nArt = {}, list;
+    righe.forEach(function(r){ (nArt[r.c] = nArt[r.c] || []).push(r); });
+    if(vista() === "cerchi"){
+      list = Object.keys(nArt).map(function(c){ return nArt[c][0]; });
+    } else {
+      list = righe;
+    }
+    HITS = ordina(list);
+    shown = PASSO;
+    var a = Object.keys(nArt).length;
+    $("count").innerHTML = righe.length + (righe.length === 1 ? " vettura" : " vetture") +
+      " <span>· " + a + (a === 1 ? " cerchio" : " cerchi") + "</span>";
+    disegna();
+  }
+
+  function specHtml(r){
+    return esc(r.w) + " x " + r.d + '" <small>canale</small> &nbsp;' +
+           esc(r.att) + " <small>fori</small> &nbsp;ET " + esc(r.etl) +
+           " &nbsp;<small>foro</small> " + dec(r.cb);
+  }
+  function anni(r){
+    if(!r.f && !r.t) return "";
+    return (r.f || "…") + " – " + (r.t || "in produzione");
+  }
+  function prezzoHtml(r){
+    if(r.p == null) return '<span class="lst">n.d.</span>';
+    if(!SCONTO) return '<span class="lst">' + eur(r.p) + '</span>';
+    return '<span class="lst old">listino ' + eur(r.p) + '</span>' +
+           '<span class="net">' + eur(netto(r.p)) + '</span>';
+  }
+  function piede(r, extra){
+    return '<div class="foot"><div><span class="cod">' + esc(r.c) + '</span>' +
+      (r.nw ? '<span class="badge">Novità</span>' : '') +
+      '<span class="sub">' + esc([r.fin, extra].filter(Boolean).join(", ")) + '</span></div>' +
+      '<div class="prz">' + prezzoHtml(r) + '</div></div>';
+  }
+
+  function cardVettura(r){
+    return '<div class="card2">' +
+      '<div class="h">' + esc(r.bl + " " + r.m) + '</div>' +
+      '<div class="yrs">' + esc(anni(r)) + '</div>' +
+      (r.v ? '<div class="ver">' + esc(r.v) + '</div>' : '') +
+      '<div class="spec">' + specHtml(r) + '</div>' +
+      (r.ty.length ? '<div class="tyres">' + esc(r.ty.join("  ")) + '</div>' : '') +
+      (r.n ? '<div class="nota">' + esc(r.n) + '</div>' : '') +
+      piede(r, r.kg != null ? dec(r.kg) + " kg" : "") +
+      '<div class="acts"><button class="rowbtn" type="button" data-det="' + r.i + '">Dettagli</button>' +
+      '<button class="rowbtn" type="button" data-rie="' + r.i + '">Riepilogo</button></div>' +
+      '</div>';
+  }
+
+  function applicazioni(cod){ return ROWS.filter(function(r){ return r.c === cod; }); }
+
+  function cardCerchio(r){
+    var ap = applicazioni(r.c), marche = {};
+    ap.forEach(function(x){ marche[x.b] = 1; });
+    var nm = Object.keys(marche);
+    var dove = ap.length + (ap.length === 1 ? " vettura" : " vetture") + ": " +
+      (nm.length <= 4 ? nm.join(", ") : nm.slice(0, 4).join(", ") + " e altre " + (nm.length - 4) + " marche");
+    return '<div class="card2">' +
+      '<div class="spec" style="margin-top:0;padding-top:0;border-top:0">' + specHtml(r) + '</div>' +
+      '<div class="ver">' + esc(dove) + '</div>' +
+      piede(r, [r.kg != null ? dec(r.kg) + " kg" : "", r.q ? r.q + " per pallet" : ""].filter(Boolean).join(", ")) +
+      '<div class="acts"><button class="rowbtn" type="button" data-app="' + r.i + '">Vetture compatibili</button></div>' +
+      '</div>';
+  }
+
+  function disegna(){
+    var box = $("lista");
+    if(!HITS.length){
+      box.innerHTML = '<p class="empty">Nessun cerchio con questi filtri. Togline uno, oppure azzera e riparti dalla marca.</p>';
+      $("altri").hidden = true;
+      return;
+    }
+    var fn = vista() === "cerchi" ? cardCerchio : cardVettura;
+    box.innerHTML = HITS.slice(0, shown).map(fn).join("");
+    var restano = HITS.length - shown;
+    $("altri").hidden = restano <= 0;
+    if(restano > 0) $("altri").textContent = "Mostra altri " + Math.min(PASSO, restano) + " (ne restano " + restano + ")";
+  }
+
+  /* ---------------- dettagli e riepilogo ---------------- */
+  function kv(pairs){
+    return '<dl class="kv">' + pairs.filter(function(p){ return p[1]; }).map(function(p){
+      return "<dt>" + esc(p[0]) + "</dt><dd>" + esc(p[1]) + "</dd>";
+    }).join("") + "</dl>";
+  }
+
+  function schedaCerchio(r){
+    return kv([
+      ["Codice Magnetto", r.c], ["Codice MWD", r.mwd], ["EAN", r.ean], ["Codice Alcar", r.alc],
+      ["Misura", r.w + " x " + r.d + '"'], ["Fori x interasse", r.att],
+      ["ET", r.etl], ["Foro centrale", dec(r.cb) + " mm"], ["Finitura", r.fin],
+      ["Peso", r.kg != null ? dec(r.kg) + " kg" : ""], ["Pezzi per pallet", r.q],
+      ["Listino", r.p != null ? eur(r.p) : ""],
+      ["Netto (−" + dec(SCONTO) + "%)", SCONTO && r.p != null ? eur(netto(r.p)) : ""]
+    ]);
+  }
+
+  function listaApplicazioni(ap){
+    return ap.map(function(x){
+      return '<div class="appl"><b>' + esc(x.bl + " " + x.m) + '</b> <span>' + esc(anni(x)) + '</span>' +
+        (x.ty.length ? '<br><span>' + esc(x.ty.join("  ")) + '</span>' : '') +
+        (x.n ? '<br><span>' + esc(x.n) + '</span>' : '') + '</div>';
+    }).join("");
+  }
+
+  function apriDettagli(r){
+    var altre = applicazioni(r.c).filter(function(x){ return x.i !== r.i; });
+    var html = "<h4>Vettura</h4>" + kv([
+      ["Versioni", r.v], ["Produzione", anni(r)], ["Pneumatici", r.ty.join(", ")],
+      ["Omologazione", r.abe], ["Codice progetto", r.pj],
+      ["Nota", r.n], ["Nota originale", r.nd && r.nd !== r.n ? r.nd : ""]
+    ]) + "<h4>Cerchio</h4>" + schedaCerchio(r);
+    if(altre.length) html += "<h4>Lo stesso cerchio monta anche su</h4>" + listaApplicazioni(altre);
+    showInfo(r.bl + " " + r.m, html);
+  }
+
+  function apriApplicazioni(r){
+    var ap = applicazioni(r.c);
+    showInfo(r.c + " — " + r.w + " x " + r.d + '"',
+      schedaCerchio(r) + "<h4>Vetture compatibili (" + ap.length + ")</h4>" + listaApplicazioni(ap));
+  }
+
+  function riepilogoText(r){
+    var L = [];
+    L.push("CERCHIO IN ACCIAIO MAGNETTO — " + r.bl + " " + r.m + (anni(r) ? " (" + anni(r) + ")" : ""));
+    L.push(r.w + " x " + r.d + '" · ' + r.att + " · ET " + r.etl + " · foro centrale " + dec(r.cb) +
+           (r.fin ? " · " + r.fin.toLowerCase() : ""));
+    L.push("Codice " + r.c + (r.ean ? " · EAN " + r.ean : ""));
+    if(r.ty.length) L.push("Pneumatici: " + r.ty.join(", "));
+    if(r.n) L.push("Nota: " + r.n);
+    if(r.p != null){
+      L.push(SCONTO
+        ? "Prezzo: " + eur(netto(r.p)) + " cad. (listino " + eur(r.p) + ", sconto " + dec(SCONTO) + "%), IVA esclusa"
+        : "Listino: " + eur(r.p) + " cad., IVA esclusa");
+    }
+    return L.join("\n");
+  }
+
+  function showInfo(title, bodyHtml){
+    $("info-title").textContent = title;
+    $("info-body").innerHTML = bodyHtml;
+    $("info-modal").hidden = false;
+    $("info-modal").querySelector(".modal-in").scrollTop = 0;
+  }
+  function closeInfo(){ $("info-modal").hidden = true; }
+  function closeModal(){ $("riepilogo-modal").hidden = true; }
+
+  function copyRiepilogo(){
+    var ta = $("riepilogo-text"), txt = ta.value;
+    function ok(){ $("copia-msg").textContent = "Copiato"; }
+    function fallback(){
+      ta.focus(); ta.select();
+      try { document.execCommand("copy"); ok(); }
+      catch(e){ $("copia-msg").textContent = "Copia manuale"; }
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok).catch(fallback);
+    } else { fallback(); }
+  }
+
+  function debounce(fn, ms){
+    var t;
+    return function(){ clearTimeout(t); t = setTimeout(fn, ms); };
+  }
+
+  function initApp(){
+    try { SCONTO = parseFloat(localStorage.getItem(LS_SCONTO)) || 0; } catch(e){}
+    if(SCONTO) $("sconto").value = SCONTO;
+
+    FILTRI.forEach(function(f){ $(f.id).addEventListener("change", aggiorna); });
+    $("q").addEventListener("input", debounce(aggiorna, 180));
+    $("c-prod").addEventListener("change", aggiorna);
+    $("c-new").addEventListener("change", aggiorna);
+    $("ordine").addEventListener("change", aggiorna);
+    document.querySelectorAll('input[name="vista"]').forEach(function(radio){
+      radio.addEventListener("change", aggiorna);
+    });
+    $("reset").addEventListener("click", function(){
+      FILTRI.forEach(function(f){ $(f.id).value = ""; });
+      $("q").value = ""; $("c-prod").checked = false; $("c-new").checked = false;
+      aggiorna();
+    });
+    $("sconto").addEventListener("input", function(){
+      var v = parseFloat(this.value.replace(",", "."));
+      SCONTO = (v > 0 && v < 100) ? v : 0;
+      try { localStorage.setItem(LS_SCONTO, String(SCONTO)); } catch(e){}
+      disegna();
+    });
+    $("altri").addEventListener("click", function(){ shown += PASSO; disegna(); });
+
+    $("lista").addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest("button") : null;
+      if(!b) return;
+      if(b.dataset.det) apriDettagli(ROWS[+b.dataset.det]);
+      else if(b.dataset.app) apriApplicazioni(ROWS[+b.dataset.app]);
+      else if(b.dataset.rie){
+        $("riepilogo-text").value = riepilogoText(ROWS[+b.dataset.rie]);
+        $("copia-msg").textContent = "";
+        $("riepilogo-modal").hidden = false;
+      }
+    });
+
+    $("chiudi-riepilogo").addEventListener("click", closeModal);
+    $("riepilogo-modal").addEventListener("click", function(e){ if(e.target === this) closeModal(); });
+    $("copia").addEventListener("click", copyRiepilogo);
+    $("info-close").addEventListener("click", closeInfo);
+    $("info-modal").addEventListener("click", function(e){ if(e.target === this) closeInfo(); });
+    document.addEventListener("keydown", function(e){
+      if(e.key === "Escape"){ closeInfo(); closeModal(); }
+    });
+
+    aggiorna();
+  }
+});
+</script>
+</body>
+</html>

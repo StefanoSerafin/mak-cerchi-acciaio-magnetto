@@ -1,0 +1,4 @@
+.DS_Store
+data/*.xlsx
+data/*.plain.json
+data/pin*.txt
