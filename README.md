@@ -57,6 +57,13 @@ anche scrivendo il codice Kronprinz.
   solo con la `deroga` scritta nella riga.
 - **Alcar**: dove è noto, la scheda dice se coincide o se va verificato.
 
+La stessa tabella contiene anche le alternative della famiglia di codici `CCAB`/`CCAS`,
+etichettate Alcar. Sono ammesse con numero Alcar uguale, oppure con codice gemello
+`CCMB`/`CCSI` già collegato alla Magnetto, oppure con misure, colore e vettura uguali nel
+listino MAK. Il listino arrotonda 114,3 a 114 e 139,7 a 139: il build li considera uguali.
+Un ET diverso fino a 0,5 passa solo con `deroga` = `et`. Il build legge da quel listino
+solo misure e finitura, mai i prezzi.
+
 Per un listino nuovo: sostituisci `data/Listino Acciaio Kronprinz.xlsx`, aggiorna
 `data/equivalenze.csv` e rilancia il build.
 

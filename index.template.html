@@ -409,7 +409,7 @@ document.addEventListener("DOMContentLoaded", function(){
       // testo su cui lavora la ricerca libera; le misure pneumatico anche senza "/" e "R"
       r.hay = [r.bl, r.m, r.v, r.c, r.mwd, r.ean, r.alc, r.pj, r.abe, r.n, r.ty.join(" "),
                r.ty.join(" ").replace(/[^0-9 ]/g, ""),
-               (ALT[r.c] || []).map(function(a){ return a.c + " " + a.de + " kronprinz"; }).join(" ")
+               (ALT[r.c] || []).map(function(a){ return a.c + " " + (a.de || "") + " " + a.forn; }).join(" ")
               ].join(" ").toLowerCase();
       return r;
     });
@@ -580,24 +580,24 @@ document.addEventListener("DOMContentLoaded", function(){
       '<div class="prz">' + prezzoHtml(r) + '</div></div>';
   }
 
-  /* ---------------- alternativa Kronprinz ---------------- */
-  var PORTATA_KP = "non indicata nel listino, da verificare";
+  /* ---------------- alternativa di altro fornitore ---------------- */
+  var PORTATA_ALT = "non indicata nel listino, da verificare";
   function portataMagnetto(a){ return a.por.length ? a.por.join("; ") : "non indicata nel catalogo"; }
 
   function altRiga(r){
     return (ALT[r.c] || []).map(function(a){
-      return '<div class="nota"><b>Anche Kronprinz: ' + esc(a.c) + '</b><br>' +
-        'Portata Magnetto: ' + esc(portataMagnetto(a)) + '<br>Portata Kronprinz: ' + PORTATA_KP + '</div>';
+      return '<div class="nota"><b>Anche ' + esc(a.forn) + ': ' + esc(a.c) + '</b><br>' +
+        'Portata Magnetto: ' + esc(portataMagnetto(a)) + '<br>Portata ' + esc(a.forn) + ': ' + PORTATA_ALT + '</div>';
     }).join("");
   }
 
   function altScheda(r){
     var alts = ALT[r.c] || [];
     if(!alts.length) return "";
-    return "<h4>Stessa ruota, Kronprinz</h4>" + alts.map(function(a){
-      return kv([
+    return alts.map(function(a){
+      return "<h4>Stessa ruota, " + esc(a.forn) + "</h4>" + kv([
         ["Codice B2B", a.c], ["Descrizione", a.de], ["Misura", a.mis], ["Finitura", a.fin],
-        ["Portata Magnetto", portataMagnetto(a)], ["Portata Kronprinz", PORTATA_KP],
+        ["Portata Magnetto", portataMagnetto(a)], ["Portata " + a.forn, PORTATA_ALT],
         ["Codice Alcar", a.alcar === true ? "coincide con la Magnetto" :
                          a.alcar === false ? "diverso dalla Magnetto: verifica" : ""],
         ["Nota", a.nota], ["Prezzo e giacenza", "sul B2B"]
@@ -706,8 +706,8 @@ document.addEventListener("DOMContentLoaded", function(){
         : "Listino: " + eur(r.p) + " cad., IVA esclusa");
     }
     (ALT[r.c] || []).forEach(function(a){
-      L.push("Alternativa Kronprinz: " + a.c + " (" + a.mis + ", " + a.fin.toLowerCase() + ")");
-      L.push("Portata Magnetto: " + portataMagnetto(a) + ". Portata Kronprinz: " + PORTATA_KP + ".");
+      L.push("Alternativa " + a.forn + ": " + a.c + " (" + a.mis + ", " + a.fin.toLowerCase() + ")");
+      L.push("Portata Magnetto: " + portataMagnetto(a) + ". Portata " + a.forn + ": " + PORTATA_ALT + ".");
     });
     return L.join("\n");
   }

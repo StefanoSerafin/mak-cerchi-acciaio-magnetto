@@ -47,6 +47,10 @@ INDEX = os.path.join(REPO, "index.html")
 PLAIN_JSON = os.path.join(HERE, "cerchi.plain.json")
 XLSX_KRONPRINZ = os.path.join(HERE, "Listino Acciaio Kronprinz.xlsx")
 CSV_EQUIVALENZE = os.path.join(HERE, "equivalenze.csv")
+# solo misure e finitura: le colonne dei prezzi A1/A2/A3 non vengono lette
+XLSX_LISTINO_MAK = os.path.join(REPO, "..", "ebook", "download",
+                                "prodotti-e-promozioni-attive__mak__ruote-in-ferro-accessori",
+                                "LISTINI ACCIAIO(A1+A2+A3).xlsx")
 RE_PORTATA = re.compile(r"Carico ruota|Portata|Max\s+[\d,.]+\s*Ton", re.I)
 FINITURE_KRONPRINZ = {"SILVER": "Argento", "MATT BLACK": "Nero"}
 
@@ -272,12 +276,34 @@ def leggi_kronprinz():
     return out
 
 
+def norm_pcd(v):
+    """Il listino MAK arrotonda gli interassi: 114 sta per 114,3 e 139 per 139,7."""
+    return {114.0: 114.3, 139.0: 139.7}.get(float(v), float(v))
+
+
+def leggi_listino_mak():
+    """Codice F... -> misure e finitura dal listino MAK."""
+    from openpyxl import load_workbook
+    ws = load_workbook(XLSX_LISTINO_MAK, read_only=True, data_only=True).worksheets[0]
+    out = {}
+    for r in ws.iter_rows(values_only=True, max_col=22):
+        if s(r[0]) != "MAK" or not s(r[21]):
+            continue
+        m = re.match(r"(\d+) X 0*(\d+(?:\.\d+)?)", s(r[15]) or "")
+        if m:
+            out[s(r[21])] = {"de": None, "w": float(r[12]), "d": float(r[11]), "h": int(m.group(1)),
+                             "pcd": float(m.group(2)), "et": float(r[14]), "cb": float(r[16]),
+                             "fin": FINITURE_KRONPRINZ.get(s(r[10]))}
+    return out
+
+
 def equivalenze(righe):
-    """Mappa R1-... -> alternative Kronprinz approvate. Si ferma se una coppia non torna."""
+    """Mappa R1-... -> alternative approvate. Si ferma se una coppia non torna."""
     kp = leggi_kronprinz()
+    listino = leggi_listino_mak()
     with open(CSV_EQUIVALENZE, encoding="utf-8", newline="") as fh:
         coppie = list(csv.DictReader(fh))
-    assenti = sorted(set(kp) - {c["codice_kronprinz"] for c in coppie})
+    assenti = sorted(set(kp) - {c["codice_alternativo"] for c in coppie})
     if assenti:
         sys.exit(f"Codici Kronprinz senza esito in equivalenze.csv: {assenti}")
 
@@ -285,27 +311,30 @@ def equivalenze(righe):
     for c in coppie:
         if c["esito"] != "ok":
             continue
-        cod, k = c["codice_magnetto"], kp.get(c["codice_kronprinz"])
+        cod, codice_alt = c["codice_magnetto"], c["codice_alternativo"]
+        k = (kp if c["fornitore"] == "Kronprinz" else listino).get(codice_alt)
         art = [x for x in righe if x["c"] == cod]
         if not art or not k:
-            sys.exit(f"Coppia con codice inesistente: {cod} / {c['codice_kronprinz']}")
+            sys.exit(f"Coppia con codice inesistente: {cod} / {codice_alt}")
         m = art[0]
-        if (float(m["d"]), float(m["wn"]), m["h"], float(m["pcd"]), float(m["et"])) != \
-                (k["d"], k["w"], k["h"], k["pcd"], k["et"]):
-            sys.exit(f"Misure diverse: {cod} / {c['codice_kronprinz']}")
+        if (float(m["d"]), float(m["wn"]), m["h"], norm_pcd(m["pcd"])) != \
+                (k["d"], k["w"], k["h"], norm_pcd(k["pcd"])) or \
+                abs(float(m["et"]) - k["et"]) > (0.5 if c["deroga"] == "et" else 0):
+            sys.exit(f"Misure diverse: {cod} / {codice_alt}")
         if m["fin"] != k["fin"] and c["deroga"] != "colore":
-            sys.exit(f"Finitura diversa senza deroga: {cod} / {c['codice_kronprinz']}")
+            sys.exit(f"Finitura diversa senza deroga: {cod} / {codice_alt}")
         if abs(m["cb"] - k["cb"]) > (0.5 if c["deroga"] == "foro" else 0.1) + 1e-6:
-            sys.exit(f"Foro centrale diverso: {cod} / {c['codice_kronprinz']}")
+            sys.exit(f"Foro centrale diverso: {cod} / {codice_alt}")
 
         alc_k = set(re.findall(r"\d+", c["alcar"]))
         alc_m = {t for x in art for t in re.findall(r"\d+", x["alc"] or "")}
         w = str(k["w"]).replace(".0", "").replace(".", ",")
-        et = str(k["et"]).replace(".0", "")
-        pcd = str(k["pcd"]).replace(".0", "")
+        et = str(k["et"]).replace(".0", "").replace(".", ",")
+        pcd = str(norm_pcd(k["pcd"])).replace(".0", "").replace(".", ",")
         cb = str(k["cb"]).replace(".0", "").replace(".", ",")
         alt.setdefault(cod, []).append({
-            "c": c["codice_kronprinz"], "de": k["de"],
+            "c": codice_alt, "forn": c["fornitore"],
+            "de": k["de"] or (f'ACCIAIO {c["alcar"]}' if c["alcar"] else None),
             "mis": f'{w} x {k["d"]:.0f}" · {k["h"]}x{pcd} · ET {et} · foro {cb}',
             "fin": k["fin"], "por": portate(righe, cod),
             "alcar": None if not alc_k else bool(alc_k & alc_m),
@@ -372,8 +401,8 @@ def main():
     print(f"  ET non numerici         {sorted({x['ets'] for x in righe if x['ets']})}")
     print(f"  senza prezzo            {sum(1 for x in righe if x['p'] is None)}")
     alt = dataset["alt"]
-    print(f"  Magnetto con Kronprinz  {len(alt)}  "
-          f"({len({a['c'] for v in alt.values() for a in v})} codici Kronprinz)")
+    print(f"  Magnetto con alternativa {len(alt)}  "
+          f"({len({a['c'] for v in alt.values() for a in v})} codici alternativi)")
     print(f"  Alcar diverso           "
           f"{sorted(c for c, v in alt.items() if any(a['alcar'] is False for a in v))}")
 
