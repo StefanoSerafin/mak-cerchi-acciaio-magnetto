@@ -358,7 +358,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
   var $ = function(id){ return document.getElementById(id); };
   var gate = $("gate"), app = $("app"), gateMsg = $("gate-msg");
-  var META = {}, ROWS = [], SCONTO = 0, HITS = [], shown = PASSO;
+  var META = {}, ROWS = [], ALT = {}, SCONTO = 0, HITS = [], shown = PASSO;
 
   function esc(s){
     return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){
@@ -400,6 +400,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
   function enter(data){
     META = data.meta || {};
+    ALT = data.alt || {};
     ROWS = data.righe.map(function(r, i){
       r.i = i;
       r.bl = r.b + (r.cm ? " (commerciali)" : "");
@@ -407,7 +408,9 @@ document.addEventListener("DOMContentLoaded", function(){
       r.etl = r.et != null ? dec(r.et) : (r.ets || "");
       // testo su cui lavora la ricerca libera; le misure pneumatico anche senza "/" e "R"
       r.hay = [r.bl, r.m, r.v, r.c, r.mwd, r.ean, r.alc, r.pj, r.abe, r.n, r.ty.join(" "),
-               r.ty.join(" ").replace(/[^0-9 ]/g, "")].join(" ").toLowerCase();
+               r.ty.join(" ").replace(/[^0-9 ]/g, ""),
+               (ALT[r.c] || []).map(function(a){ return a.c + " " + a.de + " kronprinz"; }).join(" ")
+              ].join(" ").toLowerCase();
       return r;
     });
     gate.hidden = true;
@@ -577,6 +580,31 @@ document.addEventListener("DOMContentLoaded", function(){
       '<div class="prz">' + prezzoHtml(r) + '</div></div>';
   }
 
+  /* ---------------- alternativa Kronprinz ---------------- */
+  var PORTATA_KP = "non indicata nel listino, da verificare";
+  function portataMagnetto(a){ return a.por.length ? a.por.join("; ") : "non indicata nel catalogo"; }
+
+  function altRiga(r){
+    return (ALT[r.c] || []).map(function(a){
+      return '<div class="nota"><b>Anche Kronprinz: ' + esc(a.c) + '</b><br>' +
+        'Portata Magnetto: ' + esc(portataMagnetto(a)) + '<br>Portata Kronprinz: ' + PORTATA_KP + '</div>';
+    }).join("");
+  }
+
+  function altScheda(r){
+    var alts = ALT[r.c] || [];
+    if(!alts.length) return "";
+    return "<h4>Stessa ruota, Kronprinz</h4>" + alts.map(function(a){
+      return kv([
+        ["Codice B2B", a.c], ["Descrizione", a.de], ["Misura", a.mis], ["Finitura", a.fin],
+        ["Portata Magnetto", portataMagnetto(a)], ["Portata Kronprinz", PORTATA_KP],
+        ["Codice Alcar", a.alcar === true ? "coincide con la Magnetto" :
+                         a.alcar === false ? "diverso dalla Magnetto: verifica" : ""],
+        ["Nota", a.nota], ["Prezzo e giacenza", "sul B2B"]
+      ]);
+    }).join("");
+  }
+
   function cardVettura(r){
     return '<div class="card2">' +
       '<div class="h">' + esc(r.bl + " " + r.m) + '</div>' +
@@ -585,7 +613,7 @@ document.addEventListener("DOMContentLoaded", function(){
       '<div class="spec">' + specHtml(r) + '</div>' +
       (r.ty.length ? '<div class="tyres">' + esc(r.ty.join("  ")) + '</div>' : '') +
       (r.n ? '<div class="nota">' + esc(r.n) + '</div>' : '') +
-      piede(r, r.kg != null ? dec(r.kg) + " kg" : "") +
+      piede(r, r.kg != null ? dec(r.kg) + " kg" : "") + altRiga(r) +
       '<div class="acts"><button class="rowbtn" type="button" data-det="' + r.i + '">Dettagli</button>' +
       '<button class="rowbtn" type="button" data-rie="' + r.i + '">Riepilogo</button></div>' +
       '</div>';
@@ -602,7 +630,7 @@ document.addEventListener("DOMContentLoaded", function(){
     return '<div class="card2">' +
       '<div class="spec" style="margin-top:0;padding-top:0;border-top:0">' + specHtml(r) + '</div>' +
       '<div class="ver">' + esc(dove) + '</div>' +
-      piede(r, [r.kg != null ? dec(r.kg) + " kg" : "", r.q ? r.q + " per pallet" : ""].filter(Boolean).join(", ")) +
+      piede(r, [r.kg != null ? dec(r.kg) + " kg" : "", r.q ? r.q + " per pallet" : ""].filter(Boolean).join(", ")) + altRiga(r) +
       '<div class="acts"><button class="rowbtn" type="button" data-app="' + r.i + '">Vetture compatibili</button></div>' +
       '</div>';
   }
@@ -636,7 +664,7 @@ document.addEventListener("DOMContentLoaded", function(){
       ["Peso", r.kg != null ? dec(r.kg) + " kg" : ""], ["Pezzi per pallet", r.q],
       ["Listino", r.p != null ? eur(r.p) : ""],
       ["Netto (−" + dec(SCONTO) + "%)", SCONTO && r.p != null ? eur(netto(r.p)) : ""]
-    ]);
+    ]) + altScheda(r);
   }
 
   function listaApplicazioni(ap){
@@ -677,6 +705,10 @@ document.addEventListener("DOMContentLoaded", function(){
         ? "Prezzo: " + eur(netto(r.p)) + " cad. (listino " + eur(r.p) + ", sconto " + dec(SCONTO) + "%), IVA esclusa"
         : "Listino: " + eur(r.p) + " cad., IVA esclusa");
     }
+    (ALT[r.c] || []).forEach(function(a){
+      L.push("Alternativa Kronprinz: " + a.c + " (" + a.mis + ", " + a.fin.toLowerCase() + ")");
+      L.push("Portata Magnetto: " + portataMagnetto(a) + ". Portata Kronprinz: " + PORTATA_KP + ".");
+    });
     return L.join("\n");
   }
 

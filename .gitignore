@@ -2,3 +2,4 @@
 data/*.xlsx
 data/*.plain.json
 data/pin*.txt
+data/equivalenze.csv

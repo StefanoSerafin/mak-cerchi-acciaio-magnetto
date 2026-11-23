@@ -42,6 +42,24 @@ price", in vigore dal 01.03.2025), per cerchio, IVA esclusa. **Non sono i prezzi
 MAK A1/A2/A3** del file `LISTINI ACCIAIO(A1+A2+A3).xlsx` del sito agenti: se
 servono quelli, vanno agganciati per codice articolo in `data/build.py`.
 
+## Alternative Kronprinz
+
+Se la ruota Magnetto non è disponibile, la scheda propone il codice Kronprinz equivalente
+presente sul B2B. Sono 13 codici Kronprinz abbinati a 19 articoli Magnetto, approvati da
+Stefano il 2026-11-23 in `data/equivalenze.csv` (fuori da git). La ricerca trova la ruota
+anche scrivendo il codice Kronprinz.
+
+- **Portata**: l'app riporta la frase del catalogo Magnetto, se c'è. Il listino Kronprinz non
+  ha la portata, quindi compare sempre «non indicata nel listino, da verificare».
+- **Prezzo e giacenza** dell'alternativa si leggono sul B2B: non sono nel dataset.
+- **Controlli del build**: si ferma se un codice Kronprinz non ha esito o se una coppia ha
+  diametro, canale, fori, interasse o ET diversi. Colore diverso e foro fino a 0,5 mm passano
+  solo con la `deroga` scritta nella riga.
+- **Alcar**: dove è noto, la scheda dice se coincide o se va verificato.
+
+Per un listino nuovo: sostituisci `data/Listino Acciaio Kronprinz.xlsx`, aggiorna
+`data/equivalenze.csv` e rilancia il build.
+
 ## Struttura
 
 | File | Ruolo |

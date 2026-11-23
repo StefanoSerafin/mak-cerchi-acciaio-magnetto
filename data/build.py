@@ -30,6 +30,7 @@ Dipendenze: pip3 install openpyxl cryptography
 """
 
 import base64
+import csv
 import getpass
 import hashlib
 import json
@@ -44,6 +45,10 @@ XLSX = os.path.join(HERE, "Catalogo Tecnico Magnetto Acciaio.xlsx")
 TEMPLATE = os.path.join(REPO, "index.template.html")
 INDEX = os.path.join(REPO, "index.html")
 PLAIN_JSON = os.path.join(HERE, "cerchi.plain.json")
+XLSX_KRONPRINZ = os.path.join(HERE, "Listino Acciaio Kronprinz.xlsx")
+CSV_EQUIVALENZE = os.path.join(HERE, "equivalenze.csv")
+RE_PORTATA = re.compile(r"Carico ruota|Portata|Max\s+[\d,.]+\s*Ton", re.I)
+FINITURE_KRONPRINZ = {"SILVER": "Argento", "MATT BLACK": "Nero"}
 
 PBKDF2_ITER = 200_000
 PRIMA_RIGA_DATI = 4
@@ -237,8 +242,76 @@ def parse():
         "meta": {"edizione": edizione, "prezzi": prezzi, "righe": len(righe),
                  "articoli": len({x["c"] for x in righe})},
         "righe": righe,
+        "alt": equivalenze(righe),
     }
     return dataset, stats
+
+
+def portate(righe, codice):
+    """Frasi sulla portata scritte nel catalogo per quell'articolo, senza interpretarle."""
+    out = []
+    for x in righe:
+        if x["c"] != codice or not x["n"]:
+            continue
+        for pezzo in x["n"].split(" - "):
+            if RE_PORTATA.search(pezzo) and pezzo not in out:
+                out.append(pezzo)
+    return out
+
+
+def leggi_kronprinz():
+    from openpyxl import load_workbook
+    ws = load_workbook(XLSX_KRONPRINZ, read_only=True, data_only=True).worksheets[0]
+    out = {}
+    for r in list(ws.iter_rows(values_only=True))[1:]:
+        if not s(r[0]):
+            continue
+        out[s(r[0])] = {"de": s(r[1]), "w": float(r[2]), "d": float(r[3]), "h": int(r[4]),
+                        "pcd": float(r[5]), "et": float(r[6]), "cb": float(r[7]),
+                        "fin": FINITURE_KRONPRINZ.get(s(r[8]))}
+    return out
+
+
+def equivalenze(righe):
+    """Mappa R1-... -> alternative Kronprinz approvate. Si ferma se una coppia non torna."""
+    kp = leggi_kronprinz()
+    with open(CSV_EQUIVALENZE, encoding="utf-8", newline="") as fh:
+        coppie = list(csv.DictReader(fh))
+    assenti = sorted(set(kp) - {c["codice_kronprinz"] for c in coppie})
+    if assenti:
+        sys.exit(f"Codici Kronprinz senza esito in equivalenze.csv: {assenti}")
+
+    alt = {}
+    for c in coppie:
+        if c["esito"] != "ok":
+            continue
+        cod, k = c["codice_magnetto"], kp.get(c["codice_kronprinz"])
+        art = [x for x in righe if x["c"] == cod]
+        if not art or not k:
+            sys.exit(f"Coppia con codice inesistente: {cod} / {c['codice_kronprinz']}")
+        m = art[0]
+        if (float(m["d"]), float(m["wn"]), m["h"], float(m["pcd"]), float(m["et"])) != \
+                (k["d"], k["w"], k["h"], k["pcd"], k["et"]):
+            sys.exit(f"Misure diverse: {cod} / {c['codice_kronprinz']}")
+        if m["fin"] != k["fin"] and c["deroga"] != "colore":
+            sys.exit(f"Finitura diversa senza deroga: {cod} / {c['codice_kronprinz']}")
+        if abs(m["cb"] - k["cb"]) > (0.5 if c["deroga"] == "foro" else 0.1) + 1e-6:
+            sys.exit(f"Foro centrale diverso: {cod} / {c['codice_kronprinz']}")
+
+        alc_k = set(re.findall(r"\d+", c["alcar"]))
+        alc_m = {t for x in art for t in re.findall(r"\d+", x["alc"] or "")}
+        w = str(k["w"]).replace(".0", "").replace(".", ",")
+        et = str(k["et"]).replace(".0", "")
+        pcd = str(k["pcd"]).replace(".0", "")
+        cb = str(k["cb"]).replace(".0", "").replace(".", ",")
+        alt.setdefault(cod, []).append({
+            "c": c["codice_kronprinz"], "de": k["de"],
+            "mis": f'{w} x {k["d"]:.0f}" · {k["h"]}x{pcd} · ET {et} · foro {cb}',
+            "fin": k["fin"], "por": portate(righe, cod),
+            "alcar": None if not alc_k else bool(alc_k & alc_m),
+            "nota": c["nota"] or None,
+        })
+    return alt
 
 
 def encrypt(plaintext: bytes, pin: str) -> str:
@@ -298,6 +371,11 @@ def main():
     print(f"  canali non riconosciuti {sorted({x['w'] for x in righe if x['wn'] is None})}")
     print(f"  ET non numerici         {sorted({x['ets'] for x in righe if x['ets']})}")
     print(f"  senza prezzo            {sum(1 for x in righe if x['p'] is None)}")
+    alt = dataset["alt"]
+    print(f"  Magnetto con Kronprinz  {len(alt)}  "
+          f"({len({a['c'] for v in alt.values() for a in v})} codici Kronprinz)")
+    print(f"  Alcar diverso           "
+          f"{sorted(c for c, v in alt.items() if any(a['alcar'] is False for a in v))}")
 
 
 if __name__ == "__main__":
